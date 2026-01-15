@@ -18,22 +18,32 @@ function App() {
   const loadSettings = async () => {
     try {
       const response = await fetch('/api/settings');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      if (data.rtsp_url) {
+      if (data && data.rtsp_url) {
         setRtspUrl(data.rtsp_url);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+      // Don't show alert on initial load, just log
     }
   };
 
   const loadOverlays = async () => {
     try {
       const response = await fetch('/api/overlays');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setOverlays(data);
+      if (Array.isArray(data)) {
+        setOverlays(data);
+      }
     } catch (error) {
       console.error('Error loading overlays:', error);
+      // Don't show alert on initial load, just log
     }
   };
 
