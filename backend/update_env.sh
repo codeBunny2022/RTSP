@@ -16,8 +16,8 @@ echo "Enter your MongoDB password for user 'chiragcrypt_db_user':"
 echo "(The password will be URL encoded automatically)"
 read -s PASSWORD
 
-# URL encode the password using Python
-ENCODED_PASSWORD=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$PASSWORD', safe=''))")
+# URL encode the password using Python (quote_plus for MongoDB)
+ENCODED_PASSWORD=$(python3 -c "import urllib.parse; print(urllib.parse.quote_plus('$PASSWORD'))")
 
 # Update .env file
 cat > .env << EOF
