@@ -13,6 +13,7 @@ const VideoPlayer = ({ rtspUrl, overlays, selectedOverlay, onOverlaySelect, onOv
   const [volume, setVolume] = useState(1);
   const [hlsUrl, setHlsUrl] = useState('');
   const [error, setError] = useState('');
+  const [imageErrors, setImageErrors] = useState({});
 
   // Initialize HLS.js for RTSP/HLS streaming
   useEffect(() => {
@@ -31,6 +32,29 @@ const VideoPlayer = ({ rtspUrl, overlays, selectedOverlay, onOverlaySelect, onOv
       setHlsUrl(rtspUrl);
     }
   }, [rtspUrl]);
+
+  // Sync video state with isPlaying state
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => setIsPlaying(false);
+    const handleError = () => setIsPlaying(false);
+
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('ended', handleEnded);
+    video.addEventListener('error', handleError);
+
+    return () => {
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('error', handleError);
+    };
+  }, [hlsUrl]);
 
   // Setup HLS.js player
   useEffect(() => {
@@ -92,17 +116,38 @@ const VideoPlayer = ({ rtspUrl, overlays, selectedOverlay, onOverlaySelect, onOv
     }
   }, [hlsUrl]);
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
     if (videoRef.current) {
-      videoRef.current.play();
-      setIsPlaying(true);
+      try {
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          setIsPlaying(true);
+        } else {
+          setIsPlaying(true);
+        }
+      } catch (error) {
+        // Handle play() interruption or other errors
+        if (error.name !== 'AbortError' && error.name !== 'NotAllowedError') {
+          console.error('Error playing video:', error);
+        }
+        // Update state based on actual video state
+        if (videoRef.current) {
+          setIsPlaying(!videoRef.current.paused);
+        }
+      }
     }
   };
 
   const handlePause = () => {
     if (videoRef.current) {
-      videoRef.current.pause();
-      setIsPlaying(false);
+      try {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } catch (error) {
+        console.error('Error pausing video:', error);
+        setIsPlaying(false);
+      }
     }
   };
 
@@ -142,6 +187,7 @@ const VideoPlayer = ({ rtspUrl, overlays, selectedOverlay, onOverlaySelect, onOv
       onOverlayUpdate(response.data);
     } catch (error) {
       console.error('Error updating overlay:', error);
+      // Silently fail for drag/resize to allow smooth interaction
     }
   };
 
@@ -193,15 +239,20 @@ const VideoPlayer = ({ rtspUrl, overlays, selectedOverlay, onOverlaySelect, onOv
                   {overlay.type === 'text' ? (
                     <div className="overlay-text">{overlay.content}</div>
                   ) : (
-                    <img
-                      src={overlay.content}
-                      alt="Overlay"
-                      className="overlay-image"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = '<div class="overlay-error">Image not found</div>';
-                      }}
-                    />
+                    imageErrors[overlay._id] ? (
+                      <div className="overlay-error">Image not found</div>
+                    ) : overlay.content ? (
+                      <img
+                        src={overlay.content}
+                        alt="Overlay"
+                        className="overlay-image"
+                        onError={() => {
+                          setImageErrors(prev => ({ ...prev, [overlay._id]: true }));
+                        }}
+                      />
+                    ) : (
+                      <div className="overlay-error">No image URL provided</div>
+                    )
                   )}
                 </div>
               </div>
