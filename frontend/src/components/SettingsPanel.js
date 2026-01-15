@@ -7,6 +7,11 @@ const SettingsPanel = ({ rtspUrl, onRtspUrlChange, onClose }) => {
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    if (!url.trim()) {
+      alert('Please enter an RTSP URL');
+      return;
+    }
+    
     setSaving(true);
     try {
       await axios.post('/api/settings', { rtsp_url: url });
@@ -14,7 +19,8 @@ const SettingsPanel = ({ rtspUrl, onRtspUrlChange, onClose }) => {
       alert('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Failed to save settings');
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to save settings';
+      alert(`Failed to save settings: ${errorMsg}`);
     } finally {
       setSaving(false);
     }
