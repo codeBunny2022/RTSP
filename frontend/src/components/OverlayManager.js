@@ -32,7 +32,8 @@ const OverlayManager = ({
       setShowCreateForm(false);
     } catch (error) {
       console.error('Error creating overlay:', error);
-      alert('Failed to create overlay');
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to create overlay';
+      alert(`Failed to create overlay: ${errorMsg}`);
     }
   };
 
@@ -46,7 +47,8 @@ const OverlayManager = ({
         }
       } catch (error) {
         console.error('Error deleting overlay:', error);
-        alert('Failed to delete overlay');
+        const errorMsg = error.response?.data?.error || error.message || 'Failed to delete overlay';
+        alert(`Failed to delete overlay: ${errorMsg}`);
       }
     }
   };
@@ -54,11 +56,13 @@ const OverlayManager = ({
   const handleUpdateContent = async (overlayId, newContent) => {
     try {
       const overlay = overlays.find(o => o._id === overlayId);
+      if (!overlay) return;
       const updatedOverlay = { ...overlay, content: newContent };
       const response = await axios.put(`/api/overlays/${overlayId}`, updatedOverlay);
       onOverlayUpdate(response.data);
     } catch (error) {
       console.error('Error updating overlay:', error);
+      // Silently fail for content updates to allow typing
     }
   };
 
