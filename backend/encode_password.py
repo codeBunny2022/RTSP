@@ -10,8 +10,8 @@ print()
 
 password = input("Enter your MongoDB password: ")
 
-# URL encode the password
-encoded_password = urllib.parse.quote(password, safe='')
+# URL encode the password using quote_plus (required for MongoDB)
+encoded_password = urllib.parse.quote_plus(password)
 
 print()
 print("Original password:", password)
