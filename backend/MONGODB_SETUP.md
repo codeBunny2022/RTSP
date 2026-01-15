@@ -39,7 +39,10 @@ mongodb+srv://chiragcrypt_db_user:<db_password>@clustercentrl.jnxoe0j.mongodb.ne
    ```
 
 4. **Important: URL Encode Special Characters**
-   If your password contains special characters, you need to URL encode them:
+   MongoDB requires passwords to be encoded using `urllib.parse.quote_plus()`.
+   You can use the provided script: `python3 encode_password.py`
+   
+   Common encodings:
    - `@` becomes `%40`
    - `#` becomes `%23`
    - `$` becomes `%24`
@@ -49,7 +52,7 @@ mongodb+srv://chiragcrypt_db_user:<db_password>@clustercentrl.jnxoe0j.mongodb.ne
    - `=` becomes `%3D`
    - `?` becomes `%3F`
    - `/` becomes `%2F`
-   - ` ` (space) becomes `%20`
+   - ` ` (space) becomes `+` (with quote_plus)
 
    Example: If your password is `MyP@ss#123`, it should be `MyP%40ss%23123`
 
